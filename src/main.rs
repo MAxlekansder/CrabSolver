@@ -1,8 +1,9 @@
-mod sudoku_grid;
+mod sudoku_logic;
 
-use sudoku_grid::SudokuGrid;
-use serde::{Deserialize, Serialize};  
+use sudoku_logic::SudokuGrid;
+use serde::{Deserialize, Serialize};
 
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SudokuGridDto {
     pub sudokuGrid: Vec<Vec<u8>>,
@@ -15,16 +16,7 @@ async fn main() {
     match SudokuGrid::read_sudoku_from_api(url).await {
         Ok(dto) => {
 
-            let mut grid = SudokuGrid::new();
-
-            // Iterate over the sudokuGrid in SudokuGridDto
-            for (row_idx, row_data) in dto.sudokuGrid.iter().enumerate() {
-                for (col_idx, &value) in row_data.iter().enumerate() {
-                    grid.set_cell(row_idx, col_idx, value);
-                }
-            }
-
-            // Display the populated SudokuGrid
+            let mut grid = SudokuGrid::from_dto(dto);
             grid.display();
 
             if grid.solve_sudoku() {

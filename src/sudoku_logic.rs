@@ -2,13 +2,13 @@ use reqwest::Error;
 use serde::{Deserialize, Serialize};
 
 
-
+#[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct SudokuGridDto {
     pub sudokuGrid: Vec<Vec<u8>>,
 }
 
-
+#[allow(non_snake_case)]
 #[derive(Deserialize, Debug)]
 pub struct SudokuGrid {
      cells: [[u8; 9]; 9] // unsigned integer
@@ -100,6 +100,16 @@ impl SudokuGrid {
             && !self.used_in_subgrid(row - row % 3, col - col % 3, num)
     }
 
+    pub fn from_dto(dto: SudokuGridDto) -> Self {
+        let mut grid = SudokuGrid::new();
+        for (row_idx, row_data) in dto.sudokuGrid.iter().enumerate() {
+            for (col_idx, &value) in row_data.iter().enumerate() {
+                grid.set_cell(row_idx, col_idx, value);
+            }
+        }
+        grid
+    }
+
     pub fn solve_sudoku(&mut self) -> bool {
         if let Some((row, col)) = self.find_empty_cell() {
             for num in 1..=9 {
@@ -115,22 +125,5 @@ impl SudokuGrid {
         } else {
             true
         }
-    }
-
-
-    fn solve(&mut self) -> bool {
-        if let Some((row, col)) = self.find_empty_cell() {
-            for num in 1..=9  {
-                if self.is_valid_move(row, col, num as u8) {
-                    self.set_cell(row, col, num as u8);
-                    if self.solve() {
-                        return  true;
-                    }
-                    self.set_cell(row, col, 0);
-                }
-            }
-            return  false;
-        }
-        true
     }
 }
