@@ -1,5 +1,13 @@
 use reqwest::Error;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+
+
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct SudokuGridDto {
+    pub sudokuGrid: Vec<Vec<u8>>,
+}
+
 
 #[derive(Deserialize, Debug)]
 pub struct SudokuGrid {
@@ -7,7 +15,7 @@ pub struct SudokuGrid {
 }
 
 impl SudokuGrid {
-   // pub fn new() -> Self { SudokuGrid { cells: [[0; 9]; 9] } }
+    pub fn new() -> Self { SudokuGrid { cells: [[0; 9]; 9] } }
 
     pub fn get_cell(&self, row: usize, col: usize) -> u8 {
         self.cells[row][col]
@@ -21,12 +29,19 @@ impl SudokuGrid {
     pub fn display(&self) {
         for row in &self.cells {
             for &cell in row {
-                let cell_str = if cell == 0 {".".to_string()} else { cell.to_string()};
-                print!("{}", cell_str);
+                let cell_str = if cell == 0 {
+                    ".".to_string()
+                } else {
+                    cell.to_string()
+                };
+                print!("{} ", cell_str);
             }
-            println!()
+            println!();
         }
     }
+
+
+
 
     pub fn find_empty_cell(&self) -> Option<(usize, usize)> {
         for row in 0..9 {
@@ -39,22 +54,10 @@ impl SudokuGrid {
         None
     }
 
-    pub async fn read_sudoku_from_api(url: &str) -> Result<Self, Error> {
-        println!("Fetching data");
-        let response = reqwest::get(url).await?;
-
-        // Clone the response for debugging purposes
-        let response_clone = response.clone();
-
-        println!("{:?}", response_clone);
-        let grid: SudokuGrid = response.json().await?;
-        println!("{:?}", response_clone); // Printing again if needed
-
-        Ok(SudokuGrid {
-            cells: grid.cells
-        })
+    pub async fn read_sudoku_from_api(url: &str) -> Result<SudokuGridDto, Error> {
+        let response = reqwest::get(url).await?.json::<SudokuGridDto>().await?;
+        Ok(response)
     }
-
 
     pub fn used_in_col(&self, col: usize, num: u8) -> bool {
         for row in 0..9 {
@@ -75,10 +78,16 @@ impl SudokuGrid {
     }
 
     pub fn used_in_subgrid(&self, start_row: usize, start_col: usize, num: u8) -> bool {
+        // Iterate through the 3x3 subgrid
         for row in 0..3 {
-            for col in 0.. 3 {
-                if self.get_cell(row + start_row, col + start_col) == num {
-                    return true
+            for col in 0..3 {
+                // Calculate actual grid coordinates based on start_row and start_col
+                let actual_row = start_row + row;
+                let actual_col = start_col + col;
+
+                // Check if the number exists in the subgrid
+                if self.get_cell(actual_row, actual_col) == num {
+                    return true;
                 }
             }
         }
@@ -97,14 +106,31 @@ impl SudokuGrid {
                 if self.is_valid_move(row, col, num as u8) {
                     self.set_cell(row, col, num as u8);
                     if self.solve_sudoku() {
-                        return true
+                        return true;
                     }
-                    self.set_cell(row, col, 0)
+                    self.set_cell(row, col, 0);
                 }
             }
             false
         } else {
             true
         }
+    }
+
+
+    fn solve(&mut self) -> bool {
+        if let Some((row, col)) = self.find_empty_cell() {
+            for num in 1..=9  {
+                if self.is_valid_move(row, col, num as u8) {
+                    self.set_cell(row, col, num as u8);
+                    if self.solve() {
+                        return  true;
+                    }
+                    self.set_cell(row, col, 0);
+                }
+            }
+            return  false;
+        }
+        true
     }
 }
