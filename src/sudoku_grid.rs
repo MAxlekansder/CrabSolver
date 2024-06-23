@@ -7,7 +7,7 @@ pub struct SudokuGrid {
 }
 
 impl SudokuGrid {
-    pub fn new() -> Self { SudokuGrid { cells: [[0; 9]; 9] } }
+   // pub fn new() -> Self { SudokuGrid { cells: [[0; 9]; 9] } }
 
     pub fn get_cell(&self, row: usize, col: usize) -> u8 {
         self.cells[row][col]
@@ -39,11 +39,22 @@ impl SudokuGrid {
         None
     }
 
-    pub async fn read_sudoku_from_api(url: &str) -> Result<Self, Self::Error> {
+    pub async fn read_sudoku_from_api(url: &str) -> Result<Self, Error> {
+        println!("Fetching data");
         let response = reqwest::get(url).await?;
-        let sudoku_grid: SudokuGrid = response.json().await?;
-        Ok(sudoku_grid)
+
+        // Clone the response for debugging purposes
+        let response_clone = response.clone();
+
+        println!("{:?}", response_clone);
+        let grid: SudokuGrid = response.json().await?;
+        println!("{:?}", response_clone); // Printing again if needed
+
+        Ok(SudokuGrid {
+            cells: grid.cells
+        })
     }
+
 
     pub fn used_in_col(&self, col: usize, num: u8) -> bool {
         for row in 0..9 {
@@ -84,12 +95,16 @@ impl SudokuGrid {
         if let Some((row, col)) = self.find_empty_cell() {
             for num in 1..=9 {
                 if self.is_valid_move(row, col, num as u8) {
-                    self.set_cell(row, col, num as u8) 
+                    self.set_cell(row, col, num as u8);
+                    if self.solve_sudoku() {
+                        return true
+                    }
+                    self.set_cell(row, col, 0)
                 }
             }
+            false
+        } else {
+            true
         }
-
-        true
     }
-
 }

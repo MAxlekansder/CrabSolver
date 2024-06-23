@@ -1,9 +1,24 @@
-//backtracking algorithm - brute force
-mod mods;
+mod sudoku_grid;
 
-fn main() {
+use sudoku_grid::SudokuGrid;
 
-    let mut grid = mods::sudoku_grid::SudokuGrid::new();
+#[tokio::main]
+async fn main() {
+    let url = "http://localhost:8080/krabba/sudoku";
 
-
+    match SudokuGrid::read_sudoku_from_api(url).await {
+        Ok(mut grid) => {
+            println!("Sudoku grid fetched from API:");
+            grid.display();
+            if grid.solve_sudoku() {
+                println!("Sudoku solved:");
+                grid.display();
+            } else {
+                println!("No solution found for the Sudoku grid.");
+            }
+        }
+        Err(e) => {
+            eprintln!("Error fetching Sudoku grid: {}", e);
+        }
+    }
 }
