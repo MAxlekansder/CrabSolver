@@ -1,5 +1,9 @@
 //backtracking algorithm - brute force
+mod mods;
 
 fn main() {
-    println!("Hello, world!");
+
+    let mut grid = mods::sudoku_grid::SudokuGrid::new();
+
+
 }
